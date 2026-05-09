@@ -5,6 +5,8 @@ const app = new PIXI.Application({
   width: GAME_WIDTH,
   height: GAME_HEIGHT,
   backgroundColor: 0x111111,
+  resolution: window.devicePixelRatio || 1,
+  autoDensity: true,
 });
 
 document.getElementById("game").appendChild(app.view);
