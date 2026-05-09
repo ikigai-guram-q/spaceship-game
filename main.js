@@ -24,7 +24,7 @@ PIXI.Assets.load([
   spaceship.x = GAME_WIDTH / 2;
   spaceship.y = GAME_HEIGHT * 0.7;
   spaceship.scale.set(1);
-  spaceship.state.setAnimation(0, "idle", true);
+  spaceship.state.setAnimation(0, "mining_shuttle_anim", true);
 
   stage.addChild(spaceship);
 });
