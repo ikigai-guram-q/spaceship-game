@@ -20,6 +20,61 @@ let rotateRight = false;
 let engineBone = null;
 let engineRotation = 0;
 
+const ship = {
+  x: 300,
+  y: 300,
+  vx: 0,
+  vy: 0,
+  rotation: 0,
+
+  thrustPower: 0.35,
+  sidePower: 0.18,
+  gravity: 0.12,
+
+  width: 80,
+  height: 50,
+};
+
+const input = {
+  up: false,
+  left: false,
+  right: false,
+};
+
+function updateShip() {
+  // gravity
+  ship.vy += ship.gravity;
+
+  // thrust upward
+  if (input.up) {
+    ship.vy -= ship.thrustPower;
+  }
+
+  // horizontal control
+  if (input.left) {
+    ship.vx -= ship.sidePower;
+    ship.rotation = -0.25;
+  } else if (input.right) {
+    ship.vx += ship.sidePower;
+    ship.rotation = 0.25;
+  } else {
+    ship.rotation *= 0.9;
+  }
+
+  // friction / air resistance
+  ship.vx *= 0.99;
+  ship.vy *= 0.995;
+
+  // apply movement
+  ship.x += ship.vx;
+  ship.y += ship.vy;
+
+  spaceship.x = ship.x;
+  spaceship.y = ship.y;
+  spaceship.rotation = ship.rotation;
+}
+
+
 async function loadGame() {
   PIXI.Assets.add({
     alias: "spaceshipData",
@@ -42,7 +97,11 @@ async function loadGame() {
   spaceship.x = GAME_WIDTH / 2;
   spaceship.y = GAME_HEIGHT / 2;
 
+  ship.x=spaceship.x;
+  ship.y=spaceship.y;
+
   world.addChild(spaceship);
+
   engineBone = spaceship.skeleton.findBone("engine_ctrl");
   if (!engineBone) {
     console.error("Bone not found: engine_ctrl");
@@ -59,18 +118,22 @@ async function loadGame() {
 
 document.getElementById("left").addEventListener("pointerdown", () => {
   rotateLeft = true;
+  input.left = true;
 });
 
 document.getElementById("left").addEventListener("pointerup", () => {
   rotateLeft = false;
+  input.left = false;
 });
 
 document.getElementById("right").addEventListener("pointerdown", () => {
   rotateRight = true;
+  input.up = true;
 });
 
 document.getElementById("right").addEventListener("pointerup", () => {
   rotateRight = false;
+  input.up = false;
 });
 
 loadGame();
@@ -93,6 +156,8 @@ resizeGame();
 
 app.ticker.add((delta) => {
   if (!engineBone) return;
+
+  updateShip();
 
   const speed = 3;
 

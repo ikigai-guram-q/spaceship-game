@@ -1,0 +1,11 @@
+spaceship_anim.webp
+size:628,505
+filter:Linear,Linear
+pma:true
+light
+bounds:600,476,26,27
+offsets:2,1,30,29
+spaceship
+bounds:2,2,501,596
+offsets:1,1,503,598
+rotate:90
