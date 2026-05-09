@@ -20,6 +20,8 @@ let rotateRight = false;
 let engineBone = null;
 let engineRotation = 0;
 
+const groundY = 900;
+
 const ship = {
   x: 300,
   y: 300,
@@ -53,12 +55,10 @@ function updateShip() {
   // horizontal control
   if (input.left) {
     ship.vx -= ship.sidePower;
-    ship.rotation = -0.25;
   } else if (input.right) {
     ship.vx += ship.sidePower;
-    ship.rotation = 0.25;
+
   } else {
-    ship.rotation *= 0.9;
   }
 
   // friction / air resistance
@@ -68,6 +68,12 @@ function updateShip() {
   // apply movement
   ship.x += ship.vx;
   ship.y += ship.vy;
+
+  if (ship.y > groundY) {
+  ship.y = groundY;
+
+  ship.vy = 0;
+}
 
   spaceship.x = ship.x;
   spaceship.y = ship.y;
@@ -128,10 +134,20 @@ document.getElementById("left").addEventListener("pointerup", () => {
 
 document.getElementById("right").addEventListener("pointerdown", () => {
   rotateRight = true;
-  input.up = true;
+  input.right = true;
 });
 
 document.getElementById("right").addEventListener("pointerup", () => {
+  rotateRight = false;
+  input.right = false;
+});
+
+document.getElementById("up").addEventListener("pointerdown", () => {
+  rotateRight = true;
+  input.up = true;
+});
+
+document.getElementById("up").addEventListener("pointerup", () => {
   rotateRight = false;
   input.up = false;
 });
@@ -170,5 +186,37 @@ app.ticker.add((delta) => {
   }
 
   engineBone.rotation = engineRotation;
+
+});
+
+window.addEventListener("keydown", (e) => {
+
+  if (e.code === "ArrowUp") {
+    input.up = true;
+  }
+
+  if (e.code === "ArrowLeft") {
+    input.left = true;
+  }
+
+  if (e.code === "ArrowRight") {
+    input.right = true;
+  }
+
+});
+
+window.addEventListener("keyup", (e) => {
+
+  if (e.code === "ArrowUp") {
+    input.up = false;
+  }
+
+  if (e.code === "ArrowLeft") {
+    input.left = false;
+  }
+
+  if (e.code === "ArrowRight") {
+    input.right = false;
+  }
 
 });
