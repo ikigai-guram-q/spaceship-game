@@ -16,13 +16,15 @@ let spaceship;
 let moveLeft = false;
 let moveRight = false;
 
-PIXI.Assets.load("assets/spaceship.png").then((texture) => {
-  spaceship = new PIXI.Sprite(texture);
+PIXI.Assets.load([
+  "assets/mining_shuttle/mining_shuttle.json",
+]).then((spineData) => {
+  const spaceship = new PIXI.spine.Spine(spineData);
 
-  spaceship.anchor.set(0.5);
   spaceship.x = GAME_WIDTH / 2;
   spaceship.y = GAME_HEIGHT * 0.7;
   spaceship.scale.set(1);
+  spaceship.state.setAnimation(0, "idle", true);
 
   stage.addChild(spaceship);
 });
