@@ -9,25 +9,69 @@ const app = new PIXI.Application({
 
 document.getElementById("game").appendChild(app.view);
 
-const stage = new PIXI.Container();
-app.stage.addChild(stage);
+const world = new PIXI.Container();
+app.stage.addChild(world);
 
 let spaceship;
-let moveLeft = false;
-let moveRight = false;
+let rotateLeft = false;
+let rotateRight = false;
+let engineBone = null;
+let engineRotation = 0;
 
-PIXI.Assets.load([
-  "assets/mining_shuttle/mining_shuttle.json",
-]).then((spineData) => {
-  const spaceship = new PIXI.spine.Spine(spineData);
+async function loadGame() {
+  PIXI.Assets.add({
+    alias: "spaceshipData",
+    src: "assets/mining_shuttle/mining_shuttle_anim.json",
+  });
+
+  PIXI.Assets.add({
+    alias: "spaceshipAtlas",
+    src: "assets/mining_shuttle/mining_shuttle_anim.atlas",
+  });
+
+  await PIXI.Assets.load(["spaceshipData", "spaceshipAtlas"]);
+
+  spaceship = spine.Spine.from({
+    skeleton: "spaceshipData",
+    atlas: "spaceshipAtlas",
+    scale: 0.5,
+  });
 
   spaceship.x = GAME_WIDTH / 2;
-  spaceship.y = GAME_HEIGHT * 0.7;
-  spaceship.scale.set(1);
-  spaceship.state.setAnimation(0, "mining_shuttle_anim", true);
+  spaceship.y = GAME_HEIGHT / 2;
 
-  stage.addChild(spaceship);
+  world.addChild(spaceship);
+  engineBone = spaceship.skeleton.findBone("engine_ctrl");
+  if (!engineBone) {
+    console.error("Bone not found: engine_ctrl");
+  }
+
+  console.log(
+    "Animations:",
+    spaceship.skeleton.data.animations.map(a => a.name)
+  );
+
+  const firstAnimation = spaceship.skeleton.data.animations[0].name;
+  spaceship.state.setAnimation(0, firstAnimation, true);
+}
+
+document.getElementById("left").addEventListener("pointerdown", () => {
+  rotateLeft = true;
 });
+
+document.getElementById("left").addEventListener("pointerup", () => {
+  rotateLeft = false;
+});
+
+document.getElementById("right").addEventListener("pointerdown", () => {
+  rotateRight = true;
+});
+
+document.getElementById("right").addEventListener("pointerup", () => {
+  rotateRight = false;
+});
+
+loadGame();
 
 function resizeGame() {
   const scale = Math.min(
@@ -37,27 +81,27 @@ function resizeGame() {
 
   app.renderer.resize(window.innerWidth, window.innerHeight);
 
-  stage.scale.set(scale);
-  stage.x = (window.innerWidth - GAME_WIDTH * scale) / 2;
-  stage.y = (window.innerHeight - GAME_HEIGHT * scale) / 2;
+  world.scale.set(scale);
+  world.x = (window.innerWidth - GAME_WIDTH * scale) / 2;
+  world.y = (window.innerHeight - GAME_HEIGHT * scale) / 2;
 }
 
 window.addEventListener("resize", resizeGame);
 resizeGame();
 
-document.getElementById("left").addEventListener("pointerdown", () => moveLeft = true);
-document.getElementById("left").addEventListener("pointerup", () => moveLeft = false);
-
-document.getElementById("right").addEventListener("pointerdown", () => moveRight = true);
-document.getElementById("right").addEventListener("pointerup", () => moveRight = false);
-
 app.ticker.add((delta) => {
-  if (!spaceship) return;
+  if (!engineBone) return;
 
-  const speed = 8;
+  const speed = 3;
 
-  if (moveLeft) spaceship.x -= speed * delta;
-  if (moveRight) spaceship.x += speed * delta;
+  if (rotateLeft) {
+    engineRotation -= speed * delta;
+  }
 
-  spaceship.x = Math.max(100, Math.min(GAME_WIDTH - 100, spaceship.x));
+  if (rotateRight) {
+    engineRotation += speed * delta;
+  }
+
+  engineBone.rotation = engineRotation;
+
 });
