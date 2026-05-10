@@ -1,6 +1,14 @@
 const GAME_WIDTH = 1920;
 const GAME_HEIGHT = 1080;
 
+const farBack = new PIXI.Container();
+const midBack = new PIXI.Container();
+const world = new PIXI.Container();
+
+
+
+
+
 const app = new PIXI.Application({
   width: GAME_WIDTH,
   height: GAME_HEIGHT,
@@ -11,8 +19,7 @@ const app = new PIXI.Application({
 
 document.getElementById("game").appendChild(app.view);
 
-const world = new PIXI.Container();
-app.stage.addChild(world);
+app.stage.addChild(farBack, midBack, world);
 
 let spaceship;
 let rotateLeft = false;
@@ -71,9 +78,21 @@ function updateShip() {
 
   if (ship.y > groundY) {
   ship.y = groundY;
+  }
 
-  ship.vy = 0;
-}
+  if (ship.x < 500) {
+      ship.x = 500;
+      ship.vx = -ship.vx;
+
+    ship.vy = 0;
+  }
+
+    if (ship.x > 1430) {
+      ship.x = 1430;
+      ship.vx = -ship.vx;
+
+    ship.vy = 0;
+  }
 
   spaceship.x = ship.x;
   spaceship.y = ship.y;
@@ -84,15 +103,19 @@ function updateShip() {
 async function loadGame() {
   PIXI.Assets.add({
     alias: "spaceshipData",
-    src: "assets/mining_shuttle/mining_shuttle_anim.json",
+    src: "assets/spaceship/spaceship_anim.json",
   });
 
   PIXI.Assets.add({
     alias: "spaceshipAtlas",
-    src: "assets/mining_shuttle/mining_shuttle_anim.atlas",
+    src: "assets/spaceship/spaceship_anim.atlas",
   });
 
-  await PIXI.Assets.load(["spaceshipData", "spaceshipAtlas"]);
+  PIXI.Assets.add({ alias: "bgFar", src: "assets/background_back.png" });
+  PIXI.Assets.add({ alias: "bgMid", src: "assets/background_front.png" });
+
+  await PIXI.Assets.load(["spaceshipData", "spaceshipAtlas", "bgFar", "bgMid"]);
+
 
   spaceship = spine.Spine.from({
     skeleton: "spaceshipData",
@@ -106,12 +129,17 @@ async function loadGame() {
   ship.x=spaceship.x;
   ship.y=spaceship.y;
 
-  world.addChild(spaceship);
+  const farBg = new PIXI.Sprite(PIXI.Texture.from("bgFar"));
+  farBg.width = GAME_WIDTH;
+  farBg.height = GAME_HEIGHT;
+  farBack.addChild(farBg);
 
-  engineBone = spaceship.skeleton.findBone("engine_ctrl");
-  if (!engineBone) {
-    console.error("Bone not found: engine_ctrl");
-  }
+  const midBg = new PIXI.Sprite(PIXI.Texture.from("bgMid"));
+  midBg.width = GAME_WIDTH;
+  midBg.height = GAME_HEIGHT;
+  midBack.addChild(midBg);
+
+  world.addChild(spaceship);
 
   console.log(
     "Animations:",
@@ -123,32 +151,26 @@ async function loadGame() {
 }
 
 document.getElementById("left").addEventListener("pointerdown", () => {
-  rotateLeft = true;
   input.left = true;
 });
 
 document.getElementById("left").addEventListener("pointerup", () => {
-  rotateLeft = false;
   input.left = false;
 });
 
 document.getElementById("right").addEventListener("pointerdown", () => {
-  rotateRight = true;
   input.right = true;
 });
 
 document.getElementById("right").addEventListener("pointerup", () => {
-  rotateRight = false;
   input.right = false;
 });
 
 document.getElementById("up").addEventListener("pointerdown", () => {
-  rotateRight = true;
   input.up = true;
 });
 
 document.getElementById("up").addEventListener("pointerup", () => {
-  rotateRight = false;
   input.up = false;
 });
 
@@ -162,31 +184,25 @@ function resizeGame() {
 
   app.renderer.resize(window.innerWidth, window.innerHeight);
 
+  farBack.scale.set(scale);
+  midBack.scale.set(scale);
   world.scale.set(scale);
-  world.x = (window.innerWidth - GAME_WIDTH * scale) / 2;
-  world.y = (window.innerHeight - GAME_HEIGHT * scale) / 2;
+
+  const baseX = (window.innerWidth - GAME_WIDTH * scale) / 2;
+  const baseY = (window.innerHeight - GAME_HEIGHT * scale) / 2;
+
+  farBack.position.set(baseX, baseY);
+  midBack.position.set(baseX, baseY);
+  world.position.set(baseX, baseY);
 }
 
 window.addEventListener("resize", resizeGame);
 resizeGame();
 
 app.ticker.add((delta) => {
-  if (!engineBone) return;
+  if (!spaceship) return;
 
   updateShip();
-
-  const speed = 3;
-
-  if (rotateLeft) {
-    engineRotation -= speed * delta;
-  }
-
-  if (rotateRight) {
-    engineRotation += speed * delta;
-  }
-
-  engineBone.rotation = engineRotation;
-
 });
 
 window.addEventListener("keydown", (e) => {
