@@ -26,6 +26,7 @@ let rotateLeft = false;
 let rotateRight = false;
 let engineBone = null;
 let engineRotation = 0;
+let friction=0.98;
 
 const groundY = 900;
 
@@ -69,8 +70,8 @@ function updateShip() {
   }
 
   // friction / air resistance
-  ship.vx *= 0.99;
-  ship.vy *= 0.995;
+  ship.vx *= friction;
+  ship.vy *= friction;
 
   // apply movement
   ship.x += ship.vx;
@@ -78,6 +79,7 @@ function updateShip() {
 
   if (ship.y > groundY) {
   ship.y = groundY;
+  friction = 0.5;
   }
 
   if (ship.x < 500) {
@@ -96,7 +98,6 @@ function updateShip() {
 
   spaceship.x = ship.x;
   spaceship.y = ship.y;
-  spaceship.rotation = ship.rotation;
 }
 
 
@@ -209,6 +210,7 @@ window.addEventListener("keydown", (e) => {
 
   if (e.code === "ArrowUp") {
     input.up = true;
+    friction = 0.98;
   }
 
   if (e.code === "ArrowLeft") {
