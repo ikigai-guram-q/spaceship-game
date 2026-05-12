@@ -112,8 +112,8 @@ async function loadGame() {
     src: "assets/spaceship/spaceship_anim.atlas",
   });
 
-  PIXI.Assets.add({ alias: "bgFar", src: "assets/background_back.png" });
-  PIXI.Assets.add({ alias: "bgMid", src: "assets/background_front.png" });
+  //PIXI.Assets.add({ alias: "bgFar", src: "assets/background_back.png" });
+  //PIXI.Assets.add({ alias: "bgMid", src: "assets/background_front.png" });
 
   await PIXI.Assets.load(["spaceshipData", "spaceshipAtlas", "bgFar", "bgMid"]);
 
