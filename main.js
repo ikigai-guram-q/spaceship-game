@@ -170,7 +170,6 @@ document.getElementById("right").addEventListener("pointerup", () => {
 document.getElementById("up").addEventListener("pointerdown", () => {
   input.up = true;
   friction = 0.98;
-}
 });
 
 document.getElementById("up").addEventListener("pointerup", () => {
