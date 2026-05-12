@@ -1,14 +1,15 @@
+// ================================
+// CONFIG
+// ================================
 const GAME_WIDTH = 1920;
 const GAME_HEIGHT = 1080;
 
-const farBack = new PIXI.Container();
-const midBack = new PIXI.Container();
-const world = new PIXI.Container();
+const groundY = 900;
+const friction = 0.98;
 
-
-
-
-
+// ================================
+// PIXI APP
+// ================================
 const app = new PIXI.Application({
   width: GAME_WIDTH,
   height: GAME_HEIGHT,
@@ -19,16 +20,25 @@ const app = new PIXI.Application({
 
 document.getElementById("game").appendChild(app.view);
 
+// ================================
+// LAYERS
+// ================================
+const farBack = new PIXI.Container();
+const midBack = new PIXI.Container();
+const world = new PIXI.Container();
+
 app.stage.addChild(farBack, midBack, world);
 
-let spaceship;
-let rotateLeft = false;
-let rotateRight = false;
-let engineBone = null;
-let engineRotation = 0;
-let friction=0.98;
+// ================================
+// GAME STATE
+// ================================
+let spaceship = null;
 
-const groundY = 900;
+const input = {
+  up: false,
+  left: false,
+  right: false,
+};
 
 const ship = {
   x: 300,
@@ -45,91 +55,27 @@ const ship = {
   height: 50,
 };
 
-const input = {
-  up: false,
-  left: false,
-  right: false,
-};
-
-function updateShip() {
-  // gravity
-  ship.vy += ship.gravity;
-
-  // thrust upward
-  if (input.up) {
-    ship.vy -= ship.thrustPower;
-  }
-
-  // horizontal control
-  if (input.left) {
-    ship.vx -= ship.sidePower;
-  } else if (input.right) {
-    ship.vx += ship.sidePower;
-
-  } else {
-  }
-
-  // friction / air resistance
-  ship.vx *= friction;
-  ship.vy *= friction;
-
-  // apply movement
-  ship.x += ship.vx;
-  ship.y += ship.vy;
-
-  if (ship.y > groundY) {
-  ship.y = groundY;
-  //friction = 0.5;
-  }
-
-  if (ship.x < 500) {
-      ship.x = 500;
-      ship.vx = -ship.vx;
-
-    ship.vy = 0;
-  }
-
-    if (ship.x > 1430) {
-      ship.x = 1430;
-      ship.vx = -ship.vx;
-
-    ship.vy = 0;
-  }
-
-  spaceship.x = ship.x;
-  spaceship.y = ship.y;
-}
-
-
+// ================================
+// LOAD GAME
+// ================================
 async function loadGame() {
-  PIXI.Assets.add({
-    alias: "spaceshipData",
-    src: "assets/spaceship/spaceship_anim.json",
-  });
-
-  PIXI.Assets.add({
-    alias: "spaceshipAtlas",
-    src: "assets/spaceship/spaceship_anim.atlas",
-  });
-
+  PIXI.Assets.add({ alias: "spaceshipData", src: "assets/spaceship/spaceship_anim.json" });
+  PIXI.Assets.add({ alias: "spaceshipAtlas", src: "assets/spaceship/spaceship_anim.atlas" });
   PIXI.Assets.add({ alias: "bgFar", src: "assets/background_back.png" });
   PIXI.Assets.add({ alias: "bgMid", src: "assets/background_front.png" });
 
-  await PIXI.Assets.load(["spaceshipData", "spaceshipAtlas", "bgFar", "bgMid"]);
+  await PIXI.Assets.load([
+    "spaceshipData",
+    "spaceshipAtlas",
+    "bgFar",
+    "bgMid",
+  ]);
 
+  createBackgrounds();
+  createSpaceship();
+}
 
-  spaceship = spine.Spine.from({
-    skeleton: "spaceshipData",
-    atlas: "spaceshipAtlas",
-    scale: 0.5,
-  });
-
-  spaceship.x = GAME_WIDTH / 2;
-  spaceship.y = GAME_HEIGHT / 2;
-
-  ship.x=spaceship.x;
-  ship.y=spaceship.y;
-
+function createBackgrounds() {
   const farBg = new PIXI.Sprite(PIXI.Texture.from("bgFar"));
   farBg.width = GAME_WIDTH;
   farBg.height = GAME_HEIGHT;
@@ -139,45 +85,96 @@ async function loadGame() {
   midBg.width = GAME_WIDTH;
   midBg.height = GAME_HEIGHT;
   midBack.addChild(midBg);
+}
+
+function createSpaceship() {
+  spaceship = spine.Spine.from({
+    skeleton: "spaceshipData",
+    atlas: "spaceshipAtlas",
+    scale: 0.5,
+  });
+
+  spaceship.x = GAME_WIDTH / 2;
+  spaceship.y = GAME_HEIGHT / 2;
+
+  ship.x = spaceship.x;
+  ship.y = spaceship.y;
 
   world.addChild(spaceship);
 
-  console.log(
-    "Animations:",
-    spaceship.skeleton.data.animations.map(a => a.name)
-  );
+  const animations = spaceship.skeleton.data.animations.map(a => a.name);
+  console.log("Animations:", animations);
 
-  const firstAnimation = spaceship.skeleton.data.animations[0].name;
-  spaceship.state.setAnimation(0, firstAnimation, true);
+  if (animations.length > 0) {
+    spaceship.state.setAnimation(0, animations[0], true);
+  }
 }
 
-document.getElementById("left").addEventListener("pointerdown", () => {
-  input.left = true;
+// ================================
+// UPDATE LOOP
+// ================================
+function updateShip() {
+  // Gravity
+  ship.vy += ship.gravity;
+
+  // Vertical thrust
+  if (input.up) {
+    ship.vy -= ship.thrustPower;
+  }
+
+  // Horizontal movement
+  if (input.left) {
+    ship.vx -= ship.sidePower;
+  }
+
+  if (input.right) {
+    ship.vx += ship.sidePower;
+  }
+
+  // Friction / air resistance
+  ship.vx *= friction;
+  ship.vy *= friction;
+
+  // Apply movement
+  ship.x += ship.vx;
+  ship.y += ship.vy;
+
+  handleBounds();
+
+  spaceship.x = ship.x;
+  spaceship.y = ship.y;
+}
+
+function handleBounds() {
+  // Ground
+  if (ship.y > groundY) {
+    ship.y = groundY;
+    ship.vy = 0;
+  }
+
+  // Left wall
+  if (ship.x < 500) {
+    ship.x = 500;
+    ship.vx = -ship.vx;
+    ship.vy = 0;
+  }
+
+  // Right wall
+  if (ship.x > 1430) {
+    ship.x = 1430;
+    ship.vx = -ship.vx;
+    ship.vy = 0;
+  }
+}
+
+app.ticker.add(() => {
+  if (!spaceship) return;
+  updateShip();
 });
 
-document.getElementById("left").addEventListener("pointerup", () => {
-  input.left = false;
-});
-
-document.getElementById("right").addEventListener("pointerdown", () => {
-  input.right = true;
-});
-
-document.getElementById("right").addEventListener("pointerup", () => {
-  input.right = false;
-});
-
-document.getElementById("up").addEventListener("pointerdown", () => {
-  input.up = true;
-  friction = 0.98;
-});
-
-document.getElementById("up").addEventListener("pointerup", () => {
-  input.up = false;
-});
-
-loadGame();
-
+// ================================
+// RESIZE
+// ================================
 function resizeGame() {
   const scale = Math.min(
     window.innerWidth / GAME_WIDTH,
@@ -186,12 +183,12 @@ function resizeGame() {
 
   app.renderer.resize(window.innerWidth, window.innerHeight);
 
+  const baseX = (window.innerWidth - GAME_WIDTH * scale) / 2;
+  const baseY = (window.innerHeight - GAME_HEIGHT * scale) / 2;
+
   farBack.scale.set(scale);
   midBack.scale.set(scale);
   world.scale.set(scale);
-
-  const baseX = (window.innerWidth - GAME_WIDTH * scale) / 2;
-  const baseY = (window.innerHeight - GAME_HEIGHT * scale) / 2;
 
   farBack.position.set(baseX, baseY);
   midBack.position.set(baseX, baseY);
@@ -199,43 +196,77 @@ function resizeGame() {
 }
 
 window.addEventListener("resize", resizeGame);
-resizeGame();
 
-app.ticker.add((delta) => {
-  if (!spaceship) return;
+// ================================
+// INPUT — BUTTONS
+// ================================
+function setupButtonInput() {
+  const leftButton = document.getElementById("left");
+  const rightButton = document.getElementById("right");
+  const upButton = document.getElementById("up");
 
-  updateShip();
-});
-
-window.addEventListener("keydown", (e) => {
-
-  if (e.code === "ArrowUp") {
-    input.up = true;
-    friction = 0.98;
-  }
-
-  if (e.code === "ArrowLeft") {
+  leftButton.addEventListener("pointerdown", () => {
     input.left = true;
-  }
+  });
 
-  if (e.code === "ArrowRight") {
-    input.right = true;
-  }
-
-});
-
-window.addEventListener("keyup", (e) => {
-
-  if (e.code === "ArrowUp") {
-    input.up = false;
-  }
-
-  if (e.code === "ArrowLeft") {
+  leftButton.addEventListener("pointerup", () => {
     input.left = false;
-  }
+  });
 
-  if (e.code === "ArrowRight") {
+  rightButton.addEventListener("pointerdown", () => {
+    input.right = true;
+  });
+
+  rightButton.addEventListener("pointerup", () => {
     input.right = false;
-  }
+  });
 
-});
+  upButton.addEventListener("pointerdown", () => {
+    input.up = true;
+  });
+
+  upButton.addEventListener("pointerup", () => {
+    input.up = false;
+  });
+}
+
+// ================================
+// INPUT — KEYBOARD
+// ================================
+function setupKeyboardInput() {
+  window.addEventListener("keydown", (e) => {
+    if (e.code === "ArrowUp") {
+      input.up = true;
+    }
+
+    if (e.code === "ArrowLeft") {
+      input.left = true;
+    }
+
+    if (e.code === "ArrowRight") {
+      input.right = true;
+    }
+  });
+
+  window.addEventListener("keyup", (e) => {
+    if (e.code === "ArrowUp") {
+      input.up = false;
+    }
+
+    if (e.code === "ArrowLeft") {
+      input.left = false;
+    }
+
+    if (e.code === "ArrowRight") {
+      input.right = false;
+    }
+  });
+}
+
+// ================================
+// START
+// ================================
+setupButtonInput();
+setupKeyboardInput();
+resizeGame();
+loadGame();
