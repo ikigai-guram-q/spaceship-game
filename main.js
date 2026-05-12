@@ -105,9 +105,9 @@ function createSpaceship() {
   const shadow = new PIXI.Sprite(PIXI.Texture.from("shadow"));
   shadow.anchor.set(0.5);
   shadow.x = spaceship.x;
-  shadow.y = groundY;  // Offset below spaceship
+  shadow.y = groundY+20;  // Offset below spaceship
   shadow.alpha = 0.5;  // Semi-transparent
-  shadow.scale.set(0.5);  // Adjust size
+  shadow.scale.set(0.2);  // Adjust size
 
   world.addChild(shadow);
 
@@ -158,8 +158,7 @@ function updateShip() {
   spaceship.x = ship.x;
   spaceship.y = ship.y;
   if (spaceship.shadow) {
-    spaceship.shadow.x = ship.x;
-    spaceship.shadow.y = ship.y + 20;  // Keep offset
+    spaceship.shadow.x = ship.x; 
   }
 }
 
