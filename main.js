@@ -63,12 +63,14 @@ async function loadGame() {
   PIXI.Assets.add({ alias: "spaceshipAtlas", src: "assets/spaceship/spaceship_anim.atlas" });
   PIXI.Assets.add({ alias: "bgFar", src: "assets/background_back.png" });
   PIXI.Assets.add({ alias: "bgMid", src: "assets/background_front.png" });
+  PIXI.Assets.add({ alias: "shadow", src: "assets/shadow.png" });
 
   await PIXI.Assets.load([
     "spaceshipData",
     "spaceshipAtlas",
     "bgFar",
     "bgMid",
+    "shadow",
   ]);
 
   createBackgrounds();
@@ -99,6 +101,18 @@ function createSpaceship() {
 
   ship.x = spaceship.x;
   ship.y = spaceship.y;
+
+  const shadow = new PIXI.Sprite(PIXI.Texture.from("shadow"));
+  shadow.anchor.set(0.5);
+  shadow.x = spaceship.x;
+  shadow.y = groundY;  // Offset below spaceship
+  shadow.alpha = 0.5;  // Semi-transparent
+  shadow.scale.set(0.5);  // Adjust size
+
+  world.addChild(shadow);
+
+  // Store reference for updates
+  spaceship.shadow = shadow;
 
   world.addChild(spaceship);
 
@@ -143,6 +157,10 @@ function updateShip() {
 
   spaceship.x = ship.x;
   spaceship.y = ship.y;
+  if (spaceship.shadow) {
+    spaceship.shadow.x = ship.x;
+    spaceship.shadow.y = ship.y + 20;  // Keep offset
+  }
 }
 
 function handleBounds() {
