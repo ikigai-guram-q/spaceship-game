@@ -79,7 +79,7 @@ function updateShip() {
 
   if (ship.y > groundY) {
   ship.y = groundY;
-  friction = 0.5;
+  //friction = 0.5;
   }
 
   if (ship.x < 500) {
